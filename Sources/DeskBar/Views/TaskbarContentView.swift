@@ -23,7 +23,7 @@ final class TaskbarContentView: NSView {
 
     private let rootStackView = NSStackView()
     private let bannerButton = NSButton()
-    private let zonesStackView = NSStackView()
+    private let zonesStackView = TaskbarZonesStackView()
     private let taskZoneLayoutStackView = NSStackView()
     private let leftTaskZoneStackView = NSStackView()
     private let neutralTaskZoneStackView = NSStackView()
@@ -334,8 +334,9 @@ final class TaskbarContentView: NSView {
             rootStackView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
 
-        bannerButton.title = "Accessibility permission required — Click to grant (you may need to add DeskBar manually in System Settings > Privacy & Security > Accessibility)"
-        bannerButton.toolTip = bannerButton.title
+        let permissionName = PermissionsManager.accessibilityPermissionName()
+        bannerButton.title = "\(permissionName) permission required — Click to open System Settings"
+        bannerButton.toolTip = "Enable DeskBar in System Settings > Privacy & Security > \(permissionName). If it is already enabled but access is denied after an update, remove DeskBar from the list and add /Applications/DeskBar.app again."
         bannerButton.isBordered = false
         bannerButton.bezelStyle = .regularSquare
         bannerButton.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
@@ -424,6 +425,7 @@ final class TaskbarContentView: NSView {
 
         zonesStackView.addArrangedSubview(launcherZoneView)
         zonesStackView.addArrangedSubview(taskZoneContainer)
+        zonesStackView.taskZoneView = taskZoneContainer
         if let sessionManagerWidgetView {
             zonesStackView.addArrangedSubview(sessionManagerWidgetView)
         }
@@ -622,6 +624,13 @@ final class TaskbarContentView: NSView {
             .store(in: &cancellables)
 
         settings.$systemResourceWidgetPinnedDisplayID
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.schedulePreferredWidthNotification()
+            }
+            .store(in: &cancellables)
+
+        settings.$systemResourceWidgetLocation
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.schedulePreferredWidthNotification()
@@ -2074,7 +2083,9 @@ final class TaskbarContentView: NSView {
         }
 
         let expandedFrame = expandedGroupView.convert(expandedGroupView.bounds, to: self)
-        if !expandedFrame.contains(pointInView) {
+        let hitView = zonesStackView.hitTest(convert(pointInView, to: zonesStackView.superview))
+        if !expandedFrame.contains(pointInView),
+           !(hitView?.isDescendant(of: expandedGroupView) ?? false) {
             collapseExpandedGroup()
         }
     }
@@ -2346,6 +2357,41 @@ struct TaskZoneOrderingState {
         // Anything present but not yet reconciled goes to the end rather than being dropped.
         arrangedIDs.append(contentsOf: currentIDs.filter { seenItemIDs.insert($0).inserted })
         return arrangedIDs
+    }
+}
+
+/// Keeps the visual padding around task buttons separate from their screen-edge hit area.
+final class TaskbarZonesStackView: NSStackView {
+    weak var taskZoneView: NSView?
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let localPoint = convert(point, from: superview)
+        guard !isHiddenOrHasHiddenAncestor,
+              bounds.contains(localPoint),
+              let taskZoneView,
+              !taskZoneView.isHiddenOrHasHiddenAncestor else {
+            return super.hitTest(point)
+        }
+
+        let taskBounds = taskZoneView.convert(taskZoneView.bounds, to: self)
+        guard localPoint.y < taskBounds.minY,
+              localPoint.x >= taskBounds.minX,
+              localPoint.x < taskBounds.maxX else {
+            return super.hitTest(point)
+        }
+
+        // Project only the bottom padding onto the task row. Keep horizontal gaps and clipped
+        // overflow unclaimed, and return the task itself so clicks use its normal event handlers.
+        let taskPoint = NSPoint(x: localPoint.x, y: taskBounds.midY)
+        var target = taskZoneView.hitTest(convert(taskPoint, to: taskZoneView.superview))
+        while let view = target, view !== taskZoneView {
+            if view is TaskButtonView || view is TaskZoneGroupButtonView {
+                return view
+            }
+            target = view.superview
+        }
+
+        return super.hitTest(point)
     }
 }
 
