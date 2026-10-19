@@ -5,16 +5,19 @@ final class TrayIconView: NSView {
     private let application: TrayApplicationInfo
     private let pinnedAppManager: PinnedAppManager
     private let accessibilityService: AccessibilityService
+    private let hideFromTray: (() -> Void)?
     private let iconView = NSImageView()
 
     init(
         application: TrayApplicationInfo,
         pinnedAppManager: PinnedAppManager,
-        accessibilityService: AccessibilityService = AccessibilityService()
+        accessibilityService: AccessibilityService = AccessibilityService(),
+        hideFromTray: (() -> Void)? = nil
     ) {
         self.application = application
         self.pinnedAppManager = pinnedAppManager
         self.accessibilityService = accessibilityService
+        self.hideFromTray = hideFromTray
         super.init(frame: .zero)
 
         translatesAutoresizingMaskIntoConstraints = false
@@ -123,7 +126,7 @@ final class TrayIconView: NSView {
         )
     }
 
-    private func makeContextMenu() -> NSMenu {
+    func makeContextMenu() -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
@@ -136,6 +139,11 @@ final class TrayIconView: NSView {
         hideItem.target = self
         hideItem.isEnabled = application.runningApplication != nil
         menu.addItem(hideItem)
+
+        let hideFromTrayItem = NSMenuItem(title: "Hide from Tray", action: #selector(hideTrayIcon(_:)), keyEquivalent: "")
+        hideFromTrayItem.target = self
+        hideFromTrayItem.isEnabled = hideFromTray != nil
+        menu.addItem(hideFromTrayItem)
 
         let pinItem = NSMenuItem(title: "Pin to Launcher", action: #selector(pinToLauncher(_:)), keyEquivalent: "")
         pinItem.target = self
@@ -157,6 +165,11 @@ final class TrayIconView: NSView {
     @objc
     private func hideApplication(_ sender: Any?) {
         application.runningApplication?.hide()
+    }
+
+    @objc
+    private func hideTrayIcon(_ sender: Any?) {
+        hideFromTray?()
     }
 
     @objc
