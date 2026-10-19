@@ -72,6 +72,22 @@ struct TrayVisibilityTests {
     }
 
     @Test
+    func contextMenuKeepsWindowHideAlongsideHideFromTray() {
+        withDefaults { defaults in
+            let view = TrayIconView(
+                application: application(pid: 123, bundleIdentifier: "com.example.agentbar"),
+                pinnedAppManager: PinnedAppManager(defaults: defaults),
+                hideFromTray: {}
+            )
+            let items = view.makeContextMenu().items
+            #expect(items.map(\.title) == ["Quit", "Hide", "Hide from Tray", "Pin to Launcher"])
+            let hide = items.first { $0.title == "Hide" }
+            let hideFromTray = items.first { $0.title == "Hide from Tray" }
+            #expect(hide?.action != hideFromTray?.action)
+        }
+    }
+
+    @Test
     func recoveryButtonRemainsWhenNoAppsAreRunningAndRestoresSavedIcons() throws {
         try withDefaults { defaults in
             let settings = TaskbarSettings(defaults: defaults)

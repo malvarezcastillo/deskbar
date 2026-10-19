@@ -135,10 +135,15 @@ final class TrayIconView: NSView {
         quitItem.isEnabled = application.runningApplication != nil
         menu.addItem(quitItem)
 
-        let hideItem = NSMenuItem(title: "Hide from Tray", action: #selector(hideTrayIcon(_:)), keyEquivalent: "")
+        let hideItem = NSMenuItem(title: "Hide", action: #selector(hideApplication(_:)), keyEquivalent: "")
         hideItem.target = self
-        hideItem.isEnabled = hideFromTray != nil
+        hideItem.isEnabled = application.runningApplication != nil
         menu.addItem(hideItem)
+
+        let hideFromTrayItem = NSMenuItem(title: "Hide from Tray", action: #selector(hideTrayIcon(_:)), keyEquivalent: "")
+        hideFromTrayItem.target = self
+        hideFromTrayItem.isEnabled = hideFromTray != nil
+        menu.addItem(hideFromTrayItem)
 
         let pinItem = NSMenuItem(title: "Pin to Launcher", action: #selector(pinToLauncher(_:)), keyEquivalent: "")
         pinItem.target = self
@@ -155,6 +160,11 @@ final class TrayIconView: NSView {
     @objc
     private func quitApplication(_ sender: Any?) {
         application.runningApplication?.terminate()
+    }
+
+    @objc
+    private func hideApplication(_ sender: Any?) {
+        application.runningApplication?.hide()
     }
 
     @objc
