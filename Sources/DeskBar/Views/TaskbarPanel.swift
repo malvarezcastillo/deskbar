@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 
-final class TaskbarPanel: NSPanel {
+final class TaskbarPanel: NSPanel, NSWindowDelegate {
     private static let bannerHeight: CGFloat = 32
     private static let minimumContentHeight: CGFloat = 32
     private static let compactHorizontalMargin: CGFloat = 12
@@ -74,6 +74,7 @@ final class TaskbarPanel: NSPanel {
         rootView.addSubview(chromeShadowView)
         rootView.chromeView = chromeShadowView
         contentView = rootView
+        delegate = self
         updateChromeLayout(animated: false)
 
         settings.$taskbarHeight
@@ -123,6 +124,20 @@ final class TaskbarPanel: NSPanel {
 
     override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
         frameRect
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        // AppKit or a window manager can resize the carrier after our layout pass.
+        // Reassert its display-sized frame so the tray cannot be laid out outside it.
+        let targetFrame = Self.panelFrame(
+            isAccessibilityGranted: permissionsManager.isAccessibilityGranted,
+            taskbarHeight: settings.taskbarHeight,
+            screen: ScreenGeometry.screen(for: displayID) ?? screen
+        )
+        guard !Self.framesApproximatelyEqual(frame, targetFrame) else {
+            return
+        }
+        scheduleFrameNormalization(to: targetFrame)
     }
 
     private func updateFrameForCurrentState(animated: Bool, screen: NSScreen? = nil) {

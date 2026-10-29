@@ -125,6 +125,8 @@ Rather than work around a buggy third-party app with a suspicious bundle ID, we'
 
 **Window level: `.statusBar` (25)** -- Above normal windows and the Dock, below system alerts. Always visible.
 
+The panel's carrier spans the display even in compact layouts. Unexpected window resizes are normalized back to the current display frame on the next main-loop turn, keeping the content and right-hand tray inside the window after AppKit or a window manager changes its size.
+
 **Panel configuration:**
 ```swift
 level = .statusBar
