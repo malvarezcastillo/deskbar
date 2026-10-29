@@ -266,7 +266,7 @@ The macOS Dock and DeskBar both target the screen edge. This section defines how
 {"autohide": false, "autohide-delay": 0, "timestamp": "2026-03-26T..."}
 ```
 
-**Mode: `hidden`.** Same as `autoHide`, plus sets `autohide-delay` to 1000 (effectively invisible). Prior state file captures original `autohide-delay` value.
+**Mode: `hidden`.** Same as `autoHide`, plus sets `autohide-delay` to 1000 to suppress ordinary edge-hover reveal. Prior state file captures original `autohide-delay` value. This does not disable the Dock: Mission Control can still show it.
 
 **Dock restore — defense in depth.** This section applies only to `autoHide` and `hidden` modes, which mutate `com.apple.dock` defaults. In `independent` mode (the default), DeskBar never writes to Dock preferences and no restore logic is needed.
 

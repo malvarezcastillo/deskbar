@@ -55,6 +55,21 @@ struct TaskbarVisibilityTests {
     }
 
     @Test
+    func disablingScrollHidingRestoresADismissedPanel() async throws {
+        let panel = try makePanel()
+        defer { panel.orderOut(nil) }
+        let settings = try makeSettings()
+        settings.taskbarHideScrollDirection = .down
+        let visibility = TaskbarVisibilityController(panel: panel, settings: settings)
+        visibility.setAvailable(true)
+        visibility.hide()
+        settings.taskbarHideScrollDirection = .disabled
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(panel.isVisible)
+        #expect(!visibility.isManuallyHidden)
+    }
+
+    @Test
     func hidingOnePanelDoesNotDismissAnother() throws {
         let first = try makePanel()
         let second = try makePanel()

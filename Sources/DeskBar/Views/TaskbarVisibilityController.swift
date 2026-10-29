@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 
 /// Keeps a user's dismissal separate from automatic full-screen visibility changes.
 final class TaskbarVisibilityController {
@@ -8,6 +9,7 @@ final class TaskbarVisibilityController {
     private var revealPanel: NSPanel?
     private let revealView = TaskbarRevealView()
     private var isAvailable = false
+    private var settingsCancellable: AnyCancellable?
     private(set) var isManuallyHidden = false
     var visibilityDidChange: (() -> Void)?
 
@@ -15,6 +17,13 @@ final class TaskbarVisibilityController {
         self.panel = panel
         self.settings = settings
         revealView.reveal = { [weak self] in self?.show() }
+        settingsCancellable = settings.$taskbarHideScrollDirection
+            .dropFirst()
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] direction in
+                if direction == .disabled { self?.show() }
+            }
         scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
             guard let self, event.window === self.panel,
                   Self.isHideScroll(deltaX: event.scrollingDeltaX, deltaY: event.scrollingDeltaY,
