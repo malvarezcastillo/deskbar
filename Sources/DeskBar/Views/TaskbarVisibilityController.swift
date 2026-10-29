@@ -97,6 +97,18 @@ final class TaskbarRevealView: NSView {
     private var isArmed = true
     private var tracking: NSTrackingArea?
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setAccessibilityElement(true)
+        setAccessibilityRole(.button)
+        setAccessibilityLabel("Show DeskBar")
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     func arm(pointerIsInside: Bool) {
         // Hiding while already on the edge must not immediately reveal the bar again.
         isArmed = !pointerIsInside
@@ -122,5 +134,10 @@ final class TaskbarRevealView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         reveal?()
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        reveal?()
+        return true
     }
 }

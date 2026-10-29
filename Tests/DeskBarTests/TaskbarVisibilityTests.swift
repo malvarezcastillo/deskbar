@@ -77,6 +77,8 @@ struct TaskbarVisibilityTests {
         view.arm(pointerIsInside: false)
         view.mouseEntered(with: event)
         #expect(reveals == 2)
+        #expect(view.accessibilityPerformPress())
+        #expect(reveals == 3)
     }
 
     private func makePanel() throws -> TaskbarPanel {
