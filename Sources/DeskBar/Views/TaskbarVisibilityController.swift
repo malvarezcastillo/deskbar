@@ -3,6 +3,7 @@ import AppKit
 /// Keeps a user's dismissal separate from automatic full-screen visibility changes.
 final class TaskbarVisibilityController {
     private let panel: TaskbarPanel
+    private let settings: TaskbarSettings
     private var scrollMonitor: Any?
     private var revealPanel: NSPanel?
     private let revealView = TaskbarRevealView()
@@ -10,13 +11,16 @@ final class TaskbarVisibilityController {
     private(set) var isManuallyHidden = false
     var visibilityDidChange: (() -> Void)?
 
-    init(panel: TaskbarPanel) {
+    init(panel: TaskbarPanel, settings: TaskbarSettings) {
         self.panel = panel
+        self.settings = settings
         revealView.reveal = { [weak self] in self?.show() }
         scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
             guard let self, event.window === self.panel,
                   Self.isHideScroll(deltaX: event.scrollingDeltaX, deltaY: event.scrollingDeltaY,
-                                    isMomentum: !event.momentumPhase.isEmpty),
+                                    isMomentum: !event.momentumPhase.isEmpty,
+                                    isDirectionInverted: event.isDirectionInvertedFromDevice,
+                                    direction: self.settings.taskbarHideScrollDirection),
                   let root = self.panel.contentView,
                   root.hitTest(root.convert(event.locationInWindow, from: nil)) != nil
             else { return event }
@@ -30,8 +34,17 @@ final class TaskbarVisibilityController {
         revealPanel?.orderOut(nil)
     }
 
-    static func isHideScroll(deltaX: CGFloat, deltaY: CGFloat, isMomentum: Bool) -> Bool {
-        !isMomentum && deltaY < 0 && abs(deltaY) > abs(deltaX)
+    static func isHideScroll(
+        deltaX: CGFloat, deltaY: CGFloat, isMomentum: Bool,
+        isDirectionInverted: Bool, direction: TaskbarHideScrollDirection
+    ) -> Bool {
+        guard !isMomentum, abs(deltaY) > abs(deltaX) else { return false }
+        let physicalDeltaY = isDirectionInverted ? -deltaY : deltaY
+        switch direction {
+        case .disabled: return false
+        case .down: return physicalDeltaY < 0
+        case .up: return physicalDeltaY > 0
+        }
     }
 
     func setAvailable(_ available: Bool) {

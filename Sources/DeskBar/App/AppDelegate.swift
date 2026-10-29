@@ -388,7 +388,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             contentViews[displayID] = contentView
             panels[displayID] = panel
-            let visibility = TaskbarVisibilityController(panel: panel)
+            let visibility = TaskbarVisibilityController(panel: panel, settings: settings)
             visibility.visibilityDidChange = { [weak self] in self?.updateShowTaskbarMenuItem() }
             visibilityControllers[displayID] = visibility
         }

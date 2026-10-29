@@ -21,6 +21,7 @@ struct TaskbarPanelGeometryTests {
         panel.setContentSubview(content)
         defer { panel.orderOut(nil) }
         try await Task.sleep(for: .milliseconds(50))
+        #expect(panel.level == .statusBar)
 
         var smallerFrame = panel.frame
         smallerFrame.size.width -= 44

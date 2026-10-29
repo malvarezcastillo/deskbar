@@ -125,6 +125,8 @@ Rather than work around a buggy third-party app with a suspicious bundle ID, we'
 
 **Window level: `.statusBar` (25)** -- Above normal windows and the Dock, below system alerts. Always visible.
 
+Set `isFloatingPanel` before assigning the window level: enabling floating-panel behavior resets the level to `.floating` (3), which would put the taskbar below the Dock.
+
 The panel's carrier spans the display even in compact layouts. Unexpected window resizes are normalized back to the current display frame on the next main-loop turn, keeping the content and right-hand tray inside the window after AppKit or a window manager changes its size.
 
 **Panel configuration:**
@@ -399,7 +401,7 @@ Example: the Task Zone has [Chrome-1, Terminal, Safari] in MRU order. The user d
 
 ### Spaces and Full-Screen Behavior
 
-**Manual dismissal.** A downward vertical scroll anywhere on a taskbar (including its controls) hides only that display's bar. Horizontal scrolling and momentum events do not dismiss it. Move the pointer to the display's bottom two points to reveal it, or choose **Show DeskBar** in the menu-bar menu to restore all manually hidden bars. If the pointer was already on the edge when the bar was hidden, it must leave and re-enter before revealing. A manual dismissal survives app switches and window-list refreshes. Full-screen suppression takes priority: the reveal strip is unavailable while the taskbar is suppressed, and leaving full screen preserves manual dismissal.
+**Manual dismissal.** Behavior settings provide **Scroll to hide DeskBar: Off / Scroll down / Scroll up**, defaulting to Off. The direction follows physical mouse-wheel or finger movement independently of Natural scrolling. When enabled, the matching vertical scroll anywhere on a taskbar (including its controls) hides only that display's bar. Horizontal scrolling and momentum events do not dismiss it. Move the pointer to the display's bottom two points to reveal it, or choose **Show DeskBar** in the menu-bar menu to restore all manually hidden bars. If the pointer was already on the edge when the bar was hidden, it must leave and re-enter before revealing. A manual dismissal survives app switches and window-list refreshes. Full-screen suppression takes priority: the reveal strip is unavailable while the taskbar is suppressed, and leaving full screen preserves manual dismissal.
 
 **Cross-Space presence.** DeskBar uses `.canJoinAllSpaces` and `.stationary` in its `collectionBehavior`. This is intentional and non-negotiable — a taskbar that disappears when the user switches Spaces defeats its purpose. This is the Windows taskbar model: always present, regardless of virtual desktop.
 

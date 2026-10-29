@@ -6,18 +6,28 @@ import Testing
 struct TaskbarVisibilityTests {
     @Test
     func onlyIntentionalDownwardVerticalScrollsHideTheBar() {
-        #expect(TaskbarVisibilityController.isHideScroll(deltaX: 0, deltaY: -10, isMomentum: false))
-        #expect(!TaskbarVisibilityController.isHideScroll(deltaX: 0, deltaY: 10, isMomentum: false))
-        #expect(!TaskbarVisibilityController.isHideScroll(deltaX: 10, deltaY: -1, isMomentum: false))
-        #expect(!TaskbarVisibilityController.isHideScroll(deltaX: 0, deltaY: -10, isMomentum: true))
-        #expect(!TaskbarVisibilityController.isHideScroll(deltaX: 0, deltaY: 0, isMomentum: false))
+        #expect(hides(deltaX: 0, deltaY: -10))
+        #expect(!hides(deltaX: 0, deltaY: 10))
+        #expect(!hides(deltaX: 10, deltaY: -1))
+        #expect(!hides(deltaX: 0, deltaY: -10, isMomentum: true))
+        #expect(!hides(deltaX: 0, deltaY: 0))
+    }
+
+    @Test(arguments: [false, true])
+    func selectedDirectionDoesNotReverseWithNaturalScrolling(inverted: Bool) {
+        let downDelta: CGFloat = inverted ? 10 : -10
+        #expect(hides(deltaX: 0, deltaY: downDelta, inverted: inverted))
+        #expect(!hides(deltaX: 0, deltaY: -downDelta, inverted: inverted))
+        #expect(hides(deltaX: 0, deltaY: -downDelta, inverted: inverted, direction: .up))
+        #expect(!hides(deltaX: 0, deltaY: downDelta, inverted: inverted, direction: .up))
+        #expect(!hides(deltaX: 0, deltaY: downDelta, inverted: inverted, direction: .disabled))
     }
 
     @Test
     func refreshesDoNotUndoManualDismissalAndShowRestoresIt() throws {
         let panel = try makePanel()
         defer { panel.orderOut(nil) }
-        let visibility = TaskbarVisibilityController(panel: panel)
+        let visibility = TaskbarVisibilityController(panel: panel, settings: try makeSettings())
         visibility.setAvailable(true)
         #expect(panel.isVisible)
         visibility.hide()
@@ -33,7 +43,7 @@ struct TaskbarVisibilityTests {
     func fullScreenSuppressionTakesPriorityOverManualShow() throws {
         let panel = try makePanel()
         defer { panel.orderOut(nil) }
-        let visibility = TaskbarVisibilityController(panel: panel)
+        let visibility = TaskbarVisibilityController(panel: panel, settings: try makeSettings())
         visibility.setAvailable(true)
         visibility.hide()
         visibility.setAvailable(false)
@@ -49,8 +59,8 @@ struct TaskbarVisibilityTests {
         let first = try makePanel()
         let second = try makePanel()
         defer { first.orderOut(nil); second.orderOut(nil) }
-        let firstVisibility = TaskbarVisibilityController(panel: first)
-        let secondVisibility = TaskbarVisibilityController(panel: second)
+        let firstVisibility = TaskbarVisibilityController(panel: first, settings: try makeSettings())
+        let secondVisibility = TaskbarVisibilityController(panel: second, settings: try makeSettings())
         firstVisibility.setAvailable(true)
         secondVisibility.setAvailable(true)
         firstVisibility.hide()
@@ -83,10 +93,24 @@ struct TaskbarVisibilityTests {
 
     private func makePanel() throws -> TaskbarPanel {
         let screen = try #require(NSScreen.screens.first)
+        return TaskbarPanel(permissionsManager: PermissionsManager(),
+                            settings: try makeSettings(), screen: screen)
+    }
+
+    private func makeSettings() throws -> TaskbarSettings {
         let suite = "com.deskbar.tests.visibility.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
-        return TaskbarPanel(permissionsManager: PermissionsManager(),
-                            settings: TaskbarSettings(defaults: defaults), screen: screen)
+        return TaskbarSettings(defaults: defaults)
+    }
+
+    private func hides(
+        deltaX: CGFloat, deltaY: CGFloat, isMomentum: Bool = false,
+        inverted: Bool = false, direction: TaskbarHideScrollDirection = .down
+    ) -> Bool {
+        TaskbarVisibilityController.isHideScroll(
+            deltaX: deltaX, deltaY: deltaY, isMomentum: isMomentum,
+            isDirectionInverted: inverted, direction: direction
+        )
     }
 }
