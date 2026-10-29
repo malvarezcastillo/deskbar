@@ -399,6 +399,8 @@ Example: the Task Zone has [Chrome-1, Terminal, Safari] in MRU order. The user d
 
 ### Spaces and Full-Screen Behavior
 
+**Manual dismissal.** A downward vertical scroll anywhere on a taskbar (including its controls) hides only that display's bar. Horizontal scrolling and momentum events do not dismiss it. Move the pointer to the display's bottom two points to reveal it, or choose **Show DeskBar** in the menu-bar menu to restore all manually hidden bars. If the pointer was already on the edge when the bar was hidden, it must leave and re-enter before revealing. A manual dismissal survives app switches and window-list refreshes. Full-screen suppression takes priority: the reveal strip is unavailable while the taskbar is suppressed, and leaving full screen preserves manual dismissal.
+
 **Cross-Space presence.** DeskBar uses `.canJoinAllSpaces` and `.stationary` in its `collectionBehavior`. This is intentional and non-negotiable — a taskbar that disappears when the user switches Spaces defeats its purpose. This is the Windows taskbar model: always present, regardless of virtual desktop.
 
 **Full-screen apps.** By default, DeskBar hides its panel on any display that has a full-screen window, regardless of whether that app is frontmost. The reasoning: full-screen is an intentional "I want all the pixels" gesture (video, presentations, games), and a persistent bar covering the bottom edge violates that intent.
